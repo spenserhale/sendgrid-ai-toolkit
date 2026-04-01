@@ -1,0 +1,18 @@
+{
+  "name": "sendgrid-toolkit",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "build": "vp build",
+    "dev:mcp": "vp dev --filter @sendgrid-toolkit/mcp",
+    "dev:cli": "vp dev --filter @sendgrid-toolkit/cli",
+    "test": "vp test",
+    "check": "vp check",
+    "lint": "vp lint",
+    "format": "vp format",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules"
+  },
+  "devDependencies": {
+    "vite-plus": "latest"
+  }
+}
