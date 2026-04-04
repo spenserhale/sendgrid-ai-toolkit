@@ -1,15 +1,17 @@
 import { FastMCP } from "fastmcp";
-import { registerResourceTools } from "./tools/resources.js";
+import { registerMessageTools } from "./tools/messages.js";
+import { registerSuppressionTools } from "./tools/suppressions.js";
+import { registerDiagnoseTools } from "./tools/diagnose.js";
 
 const server = new FastMCP({
   name: "sendgrid-toolkit",
   version: "0.1.0",
 });
 
-// Register tool groups
-registerResourceTools(server);
+registerMessageTools(server);
+registerSuppressionTools(server);
+registerDiagnoseTools(server);
 
-// Start the server in stdio mode (for Claude Desktop, Cursor, etc.)
 server.start({
   transportType: "stdio",
 });

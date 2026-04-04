@@ -1,7 +1,9 @@
 {
   "name": "sendgrid-toolkit",
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "build": "vp build",
     "dev:mcp": "vp dev --filter @sendgrid-toolkit/mcp",

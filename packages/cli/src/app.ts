@@ -1,27 +1,24 @@
 import { buildApplication, buildRouteMap } from "@stricli/core";
-import { listCommand } from "./commands/list.js";
-import { getCommand } from "./commands/get.js";
-import { createCommand } from "./commands/create.js";
-import { deleteCommand } from "./commands/delete.js";
-
-const resourceRoutes = buildRouteMap({
-  routes: {
-    list: listCommand,
-    get: getCommand,
-    create: createCommand,
-    delete: deleteCommand,
-  },
-  docs: {
-    brief: "Manage Sendgrid resources",
-  },
-});
+import { diagnoseCommand } from "./commands/diagnose.js";
+import { messagesCommand } from "./commands/messages.js";
+import { blocksRoutes } from "./commands/blocks.js";
+import { bouncesRoutes } from "./commands/bounces.js";
+import { spamReportsCommand } from "./commands/spam-reports.js";
+import { invalidEmailsCommand } from "./commands/invalid-emails.js";
+import { globalSuppressionsCommand } from "./commands/global-suppressions.js";
 
 const routes = buildRouteMap({
   routes: {
-    resources: resourceRoutes,
+    diagnose: diagnoseCommand,
+    messages: messagesCommand,
+    blocks: blocksRoutes,
+    bounces: bouncesRoutes,
+    "spam-reports": spamReportsCommand,
+    "invalid-emails": invalidEmailsCommand,
+    "global-suppressions": globalSuppressionsCommand,
   },
   docs: {
-    brief: "SDK, CLI, and MCP server for Sendgrid",
+    brief: "SendGrid multi-account CLI toolkit",
   },
 });
 

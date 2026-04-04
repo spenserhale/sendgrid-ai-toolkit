@@ -6,11 +6,11 @@ A VitePlus monorepo containing the SDK, CLI, and MCP server for the Sendgrid API
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
+| Package                                   | Description                                         |
+| ----------------------------------------- | --------------------------------------------------- |
 | [`@sendgrid-toolkit/sdk`](./packages/sdk) | Core SDK with types, API client, and business logic |
-| [`@sendgrid-toolkit/cli`](./packages/cli) | Command-line interface (Stricli) |
-| [`@sendgrid-toolkit/mcp`](./packages/mcp) | MCP server for AI assistants (FastMCP) |
+| [`@sendgrid-toolkit/cli`](./packages/cli) | Command-line interface (Stricli)                    |
+| [`@sendgrid-toolkit/mcp`](./packages/mcp) | MCP server for AI assistants (FastMCP)              |
 
 ## Getting Started
 

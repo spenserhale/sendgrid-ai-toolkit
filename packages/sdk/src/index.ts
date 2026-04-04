@@ -1,18 +1,33 @@
 export { SendgridClient } from "./client.js";
-export { resolveConfig } from "./config.js";
+export { AccountManager } from "./account-manager.js";
+export { resolveConfig, resolveAccounts } from "./config.js";
+export { loadEnv } from "./env.js";
 export { SendgridError, SendgridAuthError, SendgridNotFoundError } from "./errors.js";
 export type {
   SendgridConfig,
-  Resource,
-  ListResourcesParams,
-  CreateResourceParams,
-  PaginatedResponse,
+  AccountConfig,
+  EmailMessage,
+  Block,
+  Bounce,
+  SpamReport,
+  InvalidEmail,
+  GlobalSuppression,
+  SuppressionListParams,
+  MultiAccountResult,
+  AccountDiagnosis,
+  DiagnoseReport,
   ErrorResponse,
 } from "./types.js";
 export {
   SendgridConfigSchema,
-  ResourceSchema,
-  ListResourcesParamsSchema,
-  CreateResourceParamsSchema,
+  AccountConfigSchema,
+  AccountsConfigSchema,
+  EmailMessageSchema,
+  BlockSchema,
+  BounceSchema,
+  SpamReportSchema,
+  InvalidEmailSchema,
+  GlobalSuppressionSchema,
+  SuppressionListParamsSchema,
   ErrorResponseSchema,
 } from "./types.js";

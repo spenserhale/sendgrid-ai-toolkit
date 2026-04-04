@@ -11,56 +11,172 @@ export const SendgridConfigSchema = z.object({
 
 export type SendgridConfig = z.infer<typeof SendgridConfigSchema>;
 
-// ---------------------------------------------------------------------------
-// API Resource schemas -- add your own here
-// ---------------------------------------------------------------------------
-
-export const ResourceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
-
-export type Resource = z.infer<typeof ResourceSchema>;
-
-export const ListResourcesParamsSchema = z.object({
-  page: z.number().int().positive().default(1),
-  limit: z.number().int().positive().max(100).default(20),
-});
-
-export type ListResourcesParams = z.infer<typeof ListResourcesParamsSchema>;
-
-export const CreateResourceParamsSchema = z.object({
+export const AccountConfigSchema = z.object({
   name: z.string().min(1),
+  apiKey: z.string().min(1),
+  baseUrl: z.string().url().optional(),
 });
 
-export type CreateResourceParams = z.infer<typeof CreateResourceParamsSchema>;
+export type AccountConfig = z.infer<typeof AccountConfigSchema>;
+
+export const AccountsConfigSchema = z.array(AccountConfigSchema).min(1);
 
 // ---------------------------------------------------------------------------
-// API Response wrappers
+// Shared params
 // ---------------------------------------------------------------------------
 
-export const PaginatedResponseSchema = <T extends z.ZodTypeAny>(itemSchema: T) =>
-  z.object({
-    data: z.array(itemSchema),
-    total: z.number(),
-    page: z.number(),
-    limit: z.number(),
-  });
+export const SuppressionListParamsSchema = z.object({
+  startTime: z.number().int().optional(),
+  endTime: z.number().int().optional(),
+  limit: z.number().int().positive().max(500).optional(),
+  offset: z.number().int().nonnegative().optional(),
+  email: z.string().email().optional(),
+});
 
-export type PaginatedResponse<T> = {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
+export type SuppressionListParams = z.infer<typeof SuppressionListParamsSchema>;
+
+// ---------------------------------------------------------------------------
+// Email Activity — GET /v3/messages
+// ---------------------------------------------------------------------------
+
+export const EmailMessageSchema = z
+  .object({
+    from_email: z.string().optional(),
+    msg_id: z.string().optional(),
+    subject: z.string().optional(),
+    to_email: z.string().optional(),
+    status: z.string().optional(),
+    reason: z.string().optional(),
+    opens_count: z.number().optional(),
+    clicks_count: z.number().optional(),
+    last_event_time: z.string().optional(),
+  })
+  .passthrough();
+
+export const MessageEventSchema = z
+  .object({
+    event_name: z.string().optional(),
+    processed: z.string().optional(),
+    reason: z.string().optional(),
+  })
+  .passthrough();
+
+export const MessageDetailSchema = EmailMessageSchema.extend({
+  events: z.array(MessageEventSchema).optional(),
+});
+
+export type MessageDetail = z.infer<typeof MessageDetailSchema>;
+
+export type EmailMessage = z.infer<typeof EmailMessageSchema>;
+
+// ---------------------------------------------------------------------------
+// Blocks — /v3/suppression/blocks
+// ---------------------------------------------------------------------------
+
+export const BlockSchema = z
+  .object({
+    created: z.number(),
+    email: z.string(),
+    reason: z.string(),
+    status: z.string().optional(),
+  })
+  .passthrough();
+
+export type Block = z.infer<typeof BlockSchema>;
+
+// ---------------------------------------------------------------------------
+// Bounces — /v3/suppression/bounces
+// ---------------------------------------------------------------------------
+
+export const BounceSchema = z
+  .object({
+    created: z.string(),
+    email: z.string(),
+    reason: z.string(),
+    status: z.string().optional(),
+  })
+  .passthrough();
+
+export type Bounce = z.infer<typeof BounceSchema>;
+
+// ---------------------------------------------------------------------------
+// Spam Reports — /v3/suppression/spam_reports
+// ---------------------------------------------------------------------------
+
+export const SpamReportSchema = z
+  .object({
+    created: z.number(),
+    email: z.string(),
+  })
+  .passthrough();
+
+export type SpamReport = z.infer<typeof SpamReportSchema>;
+
+// ---------------------------------------------------------------------------
+// Invalid Emails — /v3/suppression/invalid_emails
+// ---------------------------------------------------------------------------
+
+export const InvalidEmailSchema = z
+  .object({
+    created: z.number(),
+    email: z.string(),
+    reason: z.string(),
+  })
+  .passthrough();
+
+export type InvalidEmail = z.infer<typeof InvalidEmailSchema>;
+
+// ---------------------------------------------------------------------------
+// Global Suppressions — /v3/asm/suppressions/global/{email}
+// ---------------------------------------------------------------------------
+
+export const GlobalSuppressionSchema = z
+  .object({
+    recipient_email: z.string(),
+  })
+  .passthrough();
+
+export type GlobalSuppression = z.infer<typeof GlobalSuppressionSchema>;
+
+// ---------------------------------------------------------------------------
+// Multi-account result wrapper
+// ---------------------------------------------------------------------------
+
+export type MultiAccountResult<T> = {
+  account: string;
+  data: T;
+  error?: string;
 };
 
+// ---------------------------------------------------------------------------
+// Diagnose report
+// ---------------------------------------------------------------------------
+
+export type AccountDiagnosis = {
+  messages: EmailMessage[];
+  blocks: Block[];
+  bounces: Bounce[];
+  spamReports: SpamReport[];
+  invalidEmails: InvalidEmail[];
+  globalSuppression: GlobalSuppression | null;
+};
+
+export type DiagnoseReport = {
+  email: string;
+  accounts: MultiAccountResult<AccountDiagnosis | null>[];
+};
+
+// ---------------------------------------------------------------------------
+// Error response schemas (SendGrid uses varying shapes)
+// ---------------------------------------------------------------------------
+
 export const ErrorResponseSchema = z.object({
-  error: z.object({
-    code: z.string(),
-    message: z.string(),
-  }),
+  errors: z.array(
+    z.object({
+      message: z.string(),
+      field: z.string().optional(),
+    }),
+  ),
 });
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;

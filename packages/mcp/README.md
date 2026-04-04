@@ -4,12 +4,12 @@ MCP server for Sendgrid, built with [FastMCP](https://github.com/punkpeye/fastmc
 
 ## Tools
 
-| Tool | Description |
-|------|-------------|
-| `list_resources` | List resources with pagination |
-| `get_resource` | Get a resource by ID |
-| `create_resource` | Create a new resource |
-| `delete_resource` | Delete a resource |
+| Tool              | Description                    |
+| ----------------- | ------------------------------ |
+| `list_resources`  | List resources with pagination |
+| `get_resource`    | Get a resource by ID           |
+| `create_resource` | Create a new resource          |
+| `delete_resource` | Delete a resource              |
 
 ## Setup with Claude Desktop
 

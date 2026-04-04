@@ -1,10 +1,10 @@
 {
   "name": "@sendgrid-toolkit/cli",
   "version": "0.1.0",
-  "type": "module",
   "bin": {
     "sendgrid": "src/bin.ts"
   },
+  "type": "module",
   "dependencies": {
     "@sendgrid-toolkit/sdk": "workspace:*",
     "@stricli/core": "^1.0.0"
