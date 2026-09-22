@@ -1,78 +1,70 @@
 import { buildCommand } from "@stricli/core";
-import { AccountManager } from "@sendgrid-toolkit/sdk";
+import { AccountManager, SendgridError, buildActivityQuery } from "@sendgrid-toolkit/sdk";
+import {
+  accountFlag,
+  daysFlag,
+  formatFlags,
+  limitFlag,
+  type FormatFlagValues,
+} from "../lib/flags.js";
+import { emit } from "../lib/output.js";
+import { runCommand, exitIfAllFailed } from "../lib/errors.js";
+import { accountList, messageRow } from "../lib/text.js";
 
-interface MessagesFlags {
+interface MessagesFlagValues extends FormatFlagValues {
   readonly query: string | undefined;
+  readonly email: string | undefined;
   readonly limit: number;
+  readonly days: number;
   readonly account: string | undefined;
-  readonly json: boolean;
 }
 
 export const messagesCommand = buildCommand({
   docs: {
-    brief: "Search email activity across all accounts",
+    brief: "Search email activity across every account",
+    fullDescription:
+      "Query the Email Activity feed (requires SendGrid's Email Activity History add-on on each " +
+      'account). Use --email for the common case, or --query for raw SendGrid syntax such as subject="Welcome". ' +
+      "--email and the no-filter default are limited to the last --days days; --query is sent verbatim, so include " +
+      "your own last_event_time bound or SendGrid may time out.",
   },
   parameters: {
     flags: {
+      email: {
+        kind: "parsed",
+        parse: String,
+        brief: "Recipient address to search for (shorthand for --query 'to_email=\"…\"')",
+        optional: true,
+      },
       query: {
         kind: "parsed",
         parse: String,
-        brief: 'SendGrid query string, e.g. to_email="user@example.com"',
+        brief: 'Raw SendGrid query, e.g. to_email="user@example.com" AND status="not_delivered"',
         optional: true,
       },
-      limit: {
-        kind: "parsed",
-        parse: Number,
-        brief: "Max messages per account",
-        default: 10,
-      },
-      account: {
-        kind: "parsed",
-        parse: String,
-        brief: "Target a specific account",
-        optional: true,
-      },
-      json: {
-        kind: "boolean",
-        brief: "Output as JSON",
-        default: false,
-      },
+      ...limitFlag,
+      ...daysFlag,
+      ...accountFlag,
+      ...formatFlags,
     },
   },
-  async func(this: void, flags: MessagesFlags) {
-    const manager = new AccountManager();
-
-    try {
+  async func(this: void, flags: MessagesFlagValues) {
+    await runCommand(async () => {
+      if (flags.email && flags.query) {
+        throw new SendgridError({
+          code: "E_VALIDATION",
+          message: "Use either --email or --query, not both",
+        });
+      }
+      // --query is passed through verbatim (caller owns the time bound); --email is windowed.
+      const query = flags.query ?? buildActivityQuery({ toEmail: flags.email, days: flags.days });
+      const manager = new AccountManager();
       const results = await manager.runAcrossAccounts(
-        (client) => client.getMessages(flags.query, flags.limit),
+        (client) => client.getMessages(query, flags.limit),
         flags.account,
       );
-
-      if (flags.json) {
-        console.log(JSON.stringify(results, null, 2));
-        return;
-      }
-
-      for (const r of results) {
-        console.log(`── Account: ${r.account} ──`);
-        if (r.error) {
-          console.log(`  Error: ${r.error}\n`);
-          continue;
-        }
-        if (r.data.length === 0) {
-          console.log("  No messages found\n");
-          continue;
-        }
-        for (const msg of r.data) {
-          console.log(
-            `  ${msg.last_event_time ?? ""}  ${msg.status ?? ""}  ${msg.from_email ?? ""} → ${msg.to_email ?? ""}  ${msg.subject ?? ""}`,
-          );
-        }
-        console.log();
-      }
-    } catch (err) {
-      console.error(`Error: ${err instanceof Error ? err.message : err}`);
-      process.exit(1);
-    }
+      emit(results, flags, { text: () => accountList(results, messageRow, "No messages found") });
+      exitIfAllFailed(results);
+    });
   },
 });

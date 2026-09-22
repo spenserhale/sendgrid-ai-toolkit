@@ -5,16 +5,26 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "vp build",
-    "dev:mcp": "vp dev --filter @sendgrid-toolkit/mcp",
-    "dev:cli": "vp dev --filter @sendgrid-toolkit/cli",
-    "test": "vp test",
+    "build": "bun run build:cli && bun run build:mcp",
+    "build:cli": "bun build packages/cli/src/bin.ts --bundle --target=bun --minify --outfile dist/sendgrid-cli.js",
+    "build:mcp": "bun build packages/mcp/src/index.ts --bundle --target=bun --minify --outfile dist/sendgrid-mcp.js --external sury --external @valibot/to-json-schema --external effect",
+    "build:skill": "bun run packages/cli/scripts/build-skill.ts",
     "check": "vp check",
-    "lint": "vp lint",
+    "clean": "rm -rf packages/*/dist dist packages/*/node_modules node_modules",
+    "compile": "bun run compile:cli && bun run compile:mcp",
+    "compile:cli": "bun build packages/cli/src/bin.ts --compile --minify --outfile dist/sendgrid",
+    "compile:mcp": "bun build packages/mcp/src/index.ts --compile --minify --outfile dist/sendgrid-mcp --external sury --external @valibot/to-json-schema --external effect",
+    "dev:cli": "vp dev --filter @sendgrid-toolkit/cli",
+    "dev:mcp": "vp dev --filter @sendgrid-toolkit/mcp",
     "format": "vp format",
-    "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules"
+    "lint": "vp lint",
+    "test": "vp test",
+    "typecheck": "tsc --noEmit -p packages/sdk/tsconfig.json && tsc --noEmit -p packages/cli/tsconfig.json && tsc --noEmit -p packages/mcp/tsconfig.json",
+    "vocab-lint": "bun run packages/cli/scripts/lint-vocab.ts"
   },
   "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2",
     "vite-plus": "latest"
   }
 }

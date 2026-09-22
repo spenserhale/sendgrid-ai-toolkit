@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build, e.g. v0.2.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run vocab-lint
+      - run: bun run test
+
+  build:
+    name: Build (${{ matrix.suffix }})
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: bun-linux-x64
+            suffix: linux-x64
+          - target: bun-linux-arm64
+            suffix: linux-arm64
+          - target: bun-darwin-x64
+            suffix: darwin-x64
+          - target: bun-darwin-arm64
+            suffix: darwin-arm64
+          - target: bun-windows-x64
+            suffix: windows-x64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+
+      - name: Compile CLI
+        run: |
+          mkdir -p dist
+          bun build packages/cli/src/bin.ts \
+            --compile \
+            --minify \
+            --target=${{ matrix.target }} \
+            --outfile dist/sendgrid-${{ matrix.suffix }}
+
+      - name: Compile MCP
+        run: |
+          bun build packages/mcp/src/index.ts \
+            --compile \
+            --minify \
+            --target=${{ matrix.target }} \
+            --outfile dist/sendgrid-mcp-${{ matrix.suffix }} \
+            --external sury \
+            --external @valibot/to-json-schema \
+            --external effect
+
+      # Bun's --compile appends .exe for bun-windows-* targets automatically.
+
+      - name: Smoke test (linux-x64 only)
+        if: matrix.suffix == 'linux-x64'
+        run: |
+          ./dist/sendgrid-linux-x64 --version
+          ./dist/sendgrid-linux-x64 agent-context | head -c 200
+
+      - name: Generate per-asset checksums
+        working-directory: dist
+        shell: bash
+        run: |
+          for f in sendgrid-*; do
+            case "$f" in
+              *.sha256) continue ;;
+            esac
+            shasum -a 256 "$f" > "$f.sha256"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.suffix }}
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Aggregate SHA256SUMS
+        run: |
+          cd artifacts
+          shasum -a 256 sendgrid-* | grep -v '\.sha256$' | sort > SHA256SUMS
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: artifacts/*

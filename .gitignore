@@ -4,3 +4,8 @@ dist/
 .env.local
 *.tsbuildinfo
 .vite/
+*.bun-build
+.DS_Store
+.idea/
+.claude/settings.local.json
+.claude/worktrees/

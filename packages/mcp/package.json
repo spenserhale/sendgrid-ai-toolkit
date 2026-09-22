@@ -1,10 +1,11 @@
 {
   "name": "@sendgrid-toolkit/mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "main": "src/index.ts",
   "dependencies": {
     "@sendgrid-toolkit/sdk": "workspace:*",
+    "@toon-format/toon": "^4.1.1",
     "fastmcp": "^3.0.0",
     "zod": "^3.24.0"
   }

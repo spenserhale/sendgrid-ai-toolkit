@@ -1,91 +1,63 @@
 import type { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { AccountManager } from "@sendgrid-toolkit/sdk";
-import type { EmailMessage } from "@sendgrid-toolkit/sdk";
-
-const STATUS_LABELS: Record<string, string> = {
-  delivered: "DELIVERED",
-  not_delivered: "NOT DELIVERED",
-  processed: "PROCESSING",
-};
-
-function statusBreakdown(messages: EmailMessage[]): string {
-  if (messages.length === 0) return "0";
-  const counts: Record<string, number> = {};
-  for (const msg of messages) {
-    const s = msg.status ?? "unknown";
-    counts[s] = (counts[s] ?? 0) + 1;
-  }
-  const parts = Object.entries(counts)
-    .map(([s, n]) => `${n} ${STATUS_LABELS[s] ?? s}`)
-    .join(", ");
-  return `${messages.length} (${parts})`;
-}
-
-function formatMessageRow(msg: EmailMessage): string {
-  const label = `[${STATUS_LABELS[msg.status ?? ""] ?? (msg.status?.toUpperCase() ?? "UNKNOWN")}]`;
-  const subject = msg.subject ? `"${msg.subject}"` : "(no subject)";
-  const time = msg.last_event_time
-    ? new Date(msg.last_event_time).toISOString().replace("T", " ").slice(0, 19)
-    : "—";
-  const reason = msg.reason ? `  reason: ${msg.reason}` : "";
-  return `  ${label.padEnd(16)} ${subject}  ${time}${reason}`;
-}
+import { AccountManager, SUPPRESSION_LISTS, DEFAULT_ACTIVITY_DAYS } from "@sendgrid-toolkit/sdk";
+import { READ_ONLY, DESTRUCTIVE, accountParam, respond, scopeParams } from "../lib/respond.js";
 
 export function registerDiagnoseTools(server: FastMCP) {
   server.addTool({
     name: "diagnose_email",
     description:
-      "Diagnose email delivery issues for a specific email address. " +
-      "Searches across all SendGrid accounts for: email activity (recent messages), " +
-      "blocks, bounces, spam reports, invalid email entries, and global suppressions. " +
-      "Returns a consolidated report showing per-account findings and reasons " +
-      "why an email might not be delivered.",
+      "Investigate why one email address is or is not receiving mail, across every configured " +
+      "SendGrid account in a single call. Per account returns: recent messages (with failure " +
+      "reasons), blocks, bounces, spam reports, invalid-email entries, global unsubscribe status, " +
+      "unsubscribe-group opt-outs, and a `summary` with `suppressed`, `suppressedIn`, and " +
+      "`messagesAvailable`. Sources that could not be queried appear in `errors` and must be " +
+      "treated as unknown, not clean (e.g. the Email Activity add-on is missing on that account). " +
+      "Start here for any deliverability question; follow up with `clear_suppressions` to fix.",
+    annotations: { title: "Diagnose email address", ...READ_ONLY },
     parameters: z.object({
-      email: z.string().email().describe("The email address to diagnose"),
-      account: z.string().optional().describe("Target a specific account (default: all)"),
+      email: z.string().email().describe("The email address to investigate"),
+      days: z
+        .number()
+        .int()
+        .nonnegative()
+        .default(DEFAULT_ACTIVITY_DAYS)
+        .describe("Email Activity look-back window in days (0 = unbounded, likely to time out)"),
+      account: accountParam,
     }),
     execute: async (args) => {
       const manager = new AccountManager();
-      const report = await manager.diagnose(args.email, args.account);
+      const report = await manager.diagnose(args.email, { account: args.account, days: args.days });
+      return respond(report);
+    },
+  });
 
-      const lines: string[] = [`Diagnosis for: ${report.email}`, ""];
-
-      for (const acct of report.accounts) {
-        lines.push(`── Account: ${acct.account} ──`);
-
-        if (acct.error) {
-          lines.push(`  Error: ${acct.error}`, "");
-          continue;
-        }
-
-        const d = acct.data;
-        if (!d) {
-          lines.push("  No data", "");
-          continue;
-        }
-
-        lines.push(`  Messages:           ${statusBreakdown(d.messages)}`);
-        for (const msg of d.messages) {
-          lines.push(formatMessageRow(msg));
-        }
-        lines.push(`  Blocks:             ${d.blocks.length}`);
-        for (const b of d.blocks) {
-          lines.push(`    [BLOCK] ${b.email} — ${b.reason}`);
-        }
-        lines.push(`  Bounces:            ${d.bounces.length}`);
-        for (const b of d.bounces) {
-          lines.push(`    [BOUNCE] ${b.email} — ${b.reason}`);
-        }
-        lines.push(
-          `  Spam Reports:       ${d.spamReports.length}`,
-          `  Invalid Emails:     ${d.invalidEmails.length}`,
-          `  Global Suppression: ${d.globalSuppression ? "YES" : "no"}`,
-          "",
-        );
-      }
-
-      return lines.join("\n");
+  server.addTool({
+    name: "clear_suppressions",
+    description:
+      "Remove an email address from every suppression list it currently appears on (blocks, " +
+      "bounces, spam reports, invalid emails, global unsubscribe, unsubscribe groups), per " +
+      "account, so SendGrid will deliver to it again. Checks each list first and only deletes " +
+      "where present. Destructive: you must pass `account` or `allAccounts: true`. Call with " +
+      "`dryRun: true` first and show the user the `would_remove` actions before running for real.",
+    annotations: { title: "Clear all suppressions", ...DESTRUCTIVE },
+    parameters: z.object({
+      email: z.string().email().describe("Email address to clear"),
+      lists: z
+        .array(z.enum(SUPPRESSION_LISTS))
+        .optional()
+        .describe("Restrict to specific lists (default: all six)"),
+      ...scopeParams,
+    }),
+    execute: async (args) => {
+      const manager = new AccountManager();
+      const report = await manager.clearSuppressions(args.email, {
+        account: args.account,
+        allAccounts: args.allAccounts,
+        dryRun: args.dryRun,
+        lists: args.lists,
+      });
+      return respond(report);
     },
   });
 }

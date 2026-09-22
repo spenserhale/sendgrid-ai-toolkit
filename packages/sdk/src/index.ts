@@ -1,33 +1,69 @@
 export { SendgridClient } from "./client.js";
-export { AccountManager } from "./account-manager.js";
-export { resolveConfig, resolveAccounts } from "./config.js";
+export { AccountManager, type ClearOptions, type DiagnoseOptions } from "./account-manager.js";
+export { resolveConfig, resolveAccounts, ENVIRONMENT, type Env } from "./config.js";
 export { loadEnv } from "./env.js";
-export { SendgridError, SendgridAuthError, SendgridNotFoundError } from "./errors.js";
+export {
+  buildActivityQuery,
+  quoteActivityValue,
+  DEFAULT_ACTIVITY_DAYS,
+  type ActivityQueryOptions,
+} from "./activity.js";
+export {
+  ErrorCode,
+  EXIT_CODES,
+  SendgridError,
+  SendgridAuthError,
+  SendgridNotFoundError,
+  SendgridRateLimitError,
+  SendgridTimeoutError,
+  isSendgridError,
+  serializeError,
+  type SendgridErrorInit,
+  type SerializedError,
+} from "./errors.js";
 export type {
   SendgridConfig,
   AccountConfig,
+  AccountScope,
   EmailMessage,
+  MessageDetail,
   Block,
   Bounce,
   SpamReport,
   InvalidEmail,
   GlobalSuppression,
+  AsmGroup,
+  AsmSuppression,
   SuppressionListParams,
+  SuppressionList,
   MultiAccountResult,
+  DiagnoseSource,
+  DiagnoseSourceError,
   AccountDiagnosis,
   DiagnoseReport,
+  ClearAction,
+  ClearActionStatus,
+  AccountClearResult,
+  ClearReport,
   ErrorResponse,
 } from "./types.js";
 export {
+  DEFAULT_BASE_URL,
+  DEFAULT_TIMEOUT_MS,
+  SUPPRESSION_LISTS,
   SendgridConfigSchema,
   AccountConfigSchema,
   AccountsConfigSchema,
   EmailMessageSchema,
+  MessageEventSchema,
+  MessageDetailSchema,
   BlockSchema,
   BounceSchema,
   SpamReportSchema,
   InvalidEmailSchema,
   GlobalSuppressionSchema,
+  AsmGroupSchema,
+  AsmSuppressionSchema,
   SuppressionListParamsSchema,
   ErrorResponseSchema,
 } from "./types.js";
