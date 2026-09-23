@@ -1,6 +1,6 @@
 ---
 name: sendgrid-cli
-description: Reference for the `sendgrid` CLI (from spenserhale/sendgrid-ai-toolkit, installed on this machine), which investigates and fixes email deliverability for one address across several SendGrid accounts at once. Trigger whenever the user asks why someone is not receiving email, mentions SendGrid bounces, blocks, spam reports, suppressions, unsubscribes, or wants to search SendGrid email activity — even if they do not name the CLI. Prefer it over hand-rolling curl against api.sendgrid.com: it handles multi-account fan-out, auth, time-boxed activity queries, and safe destructive scoping.
+description: "Reference for the `sendgrid` CLI (from spenserhale/sendgrid-ai-toolkit, installed on this machine), which investigates and fixes email deliverability for one address across several SendGrid accounts at once. Trigger whenever the user asks why someone is not receiving email, mentions SendGrid bounces, blocks, spam reports, suppressions, unsubscribes, or wants to search SendGrid email activity — even if they do not name the CLI. Prefer it over hand-rolling curl against api.sendgrid.com: it handles multi-account fan-out, auth, time-boxed activity queries, and safe destructive scoping."
 ---
 
 # sendgrid CLI

@@ -32,13 +32,18 @@ const SHARED_FLAGS = new Set([
   "--dry-run",
 ]);
 
+const DESCRIPTION =
+  `Reference for the \`${CLI_NAME}\` CLI (from ${REPO}, installed on this machine), which investigates and fixes email deliverability for one address across several SendGrid accounts at once. ` +
+  "Trigger whenever the user asks why someone is not receiving email, mentions SendGrid bounces, blocks, spam reports, suppressions, unsubscribes, or wants to search SendGrid email activity — even if they do not name the CLI. " +
+  "Prefer it over hand-rolling curl against api.sendgrid.com: it handles multi-account fan-out, auth, time-boxed activity queries, and safe destructive scoping.";
+
 function md(): string {
   const L: string[] = [];
   L.push("---");
   L.push(`name: ${CLI_NAME}-cli`);
-  L.push(
-    `description: Reference for the \`${CLI_NAME}\` CLI (from ${REPO}, installed on this machine), which investigates and fixes email deliverability for one address across several SendGrid accounts at once. Trigger whenever the user asks why someone is not receiving email, mentions SendGrid bounces, blocks, spam reports, suppressions, unsubscribes, or wants to search SendGrid email activity — even if they do not name the CLI. Prefer it over hand-rolling curl against api.sendgrid.com: it handles multi-account fan-out, auth, time-boxed activity queries, and safe destructive scoping.`,
-  );
+  // Double-quoted YAML scalar: the description contains ": " which would
+  // otherwise be parsed as a nested mapping. JSON string syntax is valid YAML.
+  L.push(`description: ${JSON.stringify(DESCRIPTION)}`);
   L.push("---");
   L.push("");
   L.push(`# ${CLI_NAME} CLI`);
